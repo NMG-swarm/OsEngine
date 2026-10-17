@@ -106,6 +106,11 @@ namespace OsEngine.Market.Servers.BCS
             worker8.Name = "BcsDiagTradeStreamReporter";
             worker8.IsBackground = true;
             worker8.Start();
+
+            Thread worker9 = new Thread(DiagPrivateStreamReporter);
+            worker9.Name = "BcsDiagPrivateStreamReporter";
+            worker9.IsBackground = true;
+            worker9.Start();
         }
 
         private WebProxy _myProxy;
@@ -1789,6 +1794,11 @@ namespace OsEngine.Market.Servers.BCS
                     return;
                 }
 
+                // diag D5: счётчики/время приватного канала портфеля
+                _diag_PfMsgCount++;
+                _diag_PfLastMsg = DateTime.Now;
+                DiagLogPrivateRaw("portfolio", e.Data, ref _diag_PfFirstFrame, _diag_PfMsgCount);
+
                 if (WebSocketPortfolioMessage == null)
                 {
                     return;
@@ -1876,6 +1886,11 @@ namespace OsEngine.Market.Servers.BCS
                 {
                     return;
                 }
+
+                // diag D5: счётчики/время приватного канала событий ордеров
+                _diag_OrMsgCount++;
+                _diag_OrLastMsg = DateTime.Now;
+                DiagLogPrivateRaw("orders", e.Data, ref _diag_OrFirstFrame, _diag_OrMsgCount);
 
                 if (WebSocketMyOrdersAndTradesMessage == null)
                 {
@@ -2231,6 +2246,88 @@ namespace OsEngine.Market.Servers.BCS
                 catch (Exception ex)
                 {
                     SendLogMessage("diag reporter error: " + ex.ToString(), LogMessageType.Error);
+                }
+            }
+        }
+
+        #endregion
+
+        #region diag bug-0094 D5. Временное диагностирование живости приватных сокетов. В PR не попадает
+
+        private DateTime _diag_PfLastMsg = DateTime.MinValue;
+        private DateTime _diag_OrLastMsg = DateTime.MinValue;
+        private long _diag_PfMsgCount = 0;
+        private long _diag_OrMsgCount = 0;
+        private int _diag_PfFirstFrame = 0;
+        private int _diag_OrFirstFrame = 0;
+        private long _diag_PfPrev = 0;
+        private long _diag_OrPrev = 0;
+
+        // diag: сырые фреймы логируем только первые 2000 на канал, дальше только счётчики
+        private void DiagLogPrivateRaw(string channel, string data, ref int firstFrame, long count)
+        {
+            try
+            {
+                if (firstFrame == 0)
+                {
+                    firstFrame = 1;
+                    SendLogMessage("diag D5 first-frame " + channel + " len=" + data.Length, LogMessageType.System);
+                }
+
+                if (count <= 2000)
+                {
+                    SendLogMessage("diag D5 raw " + channel + " " + (data.Length > 1000 ? data.Substring(0, 1000) + "..." : data), LogMessageType.System);
+                }
+            }
+            catch { }
+        }
+
+        private void DiagPrivateStreamReporter()
+        {
+            Thread.Sleep(15000);
+
+            while (true)
+            {
+                try
+                {
+                    Thread.Sleep(60000);
+
+                    if (ServerStatus != ServerConnectStatus.Connect)
+                    {
+                        continue;
+                    }
+
+                    long pf = _diag_PfMsgCount;
+                    long or = _diag_OrMsgCount;
+
+                    string sPf = _diag_PfLastMsg == DateTime.MinValue ? "n/a" : (DateTime.Now - _diag_PfLastMsg).TotalSeconds.ToString("F0");
+                    string sOr = _diag_OrLastMsg == DateTime.MinValue ? "n/a" : (DateTime.Now - _diag_OrLastMsg).TotalSeconds.ToString("F0");
+
+                    SendLogMessage($"diag D5 private: portfolio +{pf - _diag_PfPrev} (total {pf}, silence {sPf}s) | orders +{or - _diag_OrPrev} (total {or}, silence {sOr}s)", LogMessageType.System);
+
+                    _diag_PfPrev = pf;
+                    _diag_OrPrev = or;
+
+                    // в торговые часы громко сигналим тишину приватного канала более 10 минут (после первого сообщения)
+                    TimeSpan tod = DateTime.Now.TimeOfDay;
+
+                    if (tod >= TimeSpan.FromMinutes(410) && tod <= TimeSpan.FromMinutes(1430))
+                    {
+                        if (_diag_PfLastMsg != DateTime.MinValue && DateTime.Now - _diag_PfLastMsg > TimeSpan.FromMinutes(10))
+                        {
+                            SendLogMessage("diag D5 SILENCE portfolio: нет сообщений более 10 минут в торговое время", LogMessageType.Error);
+                        }
+
+                        if (_diag_OrLastMsg != DateTime.MinValue && DateTime.Now - _diag_OrLastMsg > TimeSpan.FromMinutes(10))
+                        {
+                            SendLogMessage("diag D5 SILENCE orders: нет сообщений более 10 минут в торговое время", LogMessageType.Error);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SendLogMessage("diag D5 reporter error: " + ex.ToString(), LogMessageType.Error);
+                    Thread.Sleep(5000);
                 }
             }
         }
