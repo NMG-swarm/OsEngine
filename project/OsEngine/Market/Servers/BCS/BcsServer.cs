@@ -16,6 +16,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -100,6 +101,11 @@ namespace OsEngine.Market.Servers.BCS
             worker7.Name = "BcsMarketDataWatchdog";
             worker7.IsBackground = true;
             worker7.Start();
+
+            Thread worker8 = new Thread(DiagTradeStreamReporter);
+            worker8.Name = "BcsDiagTradeStreamReporter";
+            worker8.IsBackground = true;
+            worker8.Start();
         }
 
         private WebProxy _myProxy;
@@ -371,6 +377,15 @@ namespace OsEngine.Market.Servers.BCS
                 _depthSubscribeTimes.Clear();
                 _depthSubscribeAttempts.Clear();
                 _loggedEmptyDepth.Clear();
+                _diag_TradesSeen.Clear();
+                _diag_TradesCount.Clear();
+                _diag_TradesLastTime.Clear();
+                _diag_DepthCount.Clear();
+                _diag_LastTradesPrev.Clear();
+                _diag_DepthPrev.Clear();
+                _diag_SubSendTime.Clear();
+                _diag_LastTradesSuccessTime.Clear();
+                _diag_ProbeFired = 0;
             }
 
             lock (_pendingMyTradeFetchLocker)
@@ -1971,10 +1986,19 @@ namespace OsEngine.Market.Servers.BCS
                     webSocketPublic.SendAsync($"{{\"subscribeType\": 0,\"dataType\": 2,\"instruments\": [{{\"ticker\": \"{security.Name}\",\"classCode\": \"{GetClassCode(security)}\"}}]}}");
                     webSocketPublic.SendAsync($"{{\"subscribeType\": 0,\"dataType\": 0,\"depth\": {depth},\"instruments\": [{{\"ticker\": \"{security.Name}\",\"classCode\": \"{GetClassCode(security)}\"}}]}}");
 
+                    // diag bug-0091: факт отправки фреймов подписки + сброс diag-состояния тикера
+                    SendLogMessage($"diag D2 subscribe sent. ticker={security.Name} class={GetClassCode(security)} dataType=2 dataType=0 depth={depth}", LogMessageType.System);
+
                     lock (_depthSubscribeLocker)
                     {
                         _depthSubscribeTimes[security.Name] = DateTime.Now;
                         _depthSubscribeAttempts[security.Name] = 0;
+                        _diag_TradesSeen.Remove(security.Name);
+                        _diag_TradesCount[security.Name] = 0;
+                        _diag_TradesLastTime[security.Name] = DateTime.MinValue;
+                        _diag_DepthCount[security.Name] = 0;
+                        _diag_LastTradesSuccessTime[security.Name] = DateTime.MinValue;
+                        _diag_SubSendTime[security.Name] = DateTime.Now;
                     }
                 }
             }
@@ -2095,6 +2119,123 @@ namespace OsEngine.Market.Servers.BCS
                 _depthSubscribeAttempts[securityName] = attempts + 1;
             }
         }
+
+        #region diag bug-0091. Временное диагностирование LastTrades. В PR не попадает
+
+        private readonly Dictionary<string, DateTime> _diag_SubSendTime = new Dictionary<string, DateTime>();
+        private readonly Dictionary<string, DateTime> _diag_LastTradesSuccessTime = new Dictionary<string, DateTime>();
+        private readonly HashSet<string> _diag_TradesSeen = new HashSet<string>();
+        private readonly Dictionary<string, int> _diag_TradesCount = new Dictionary<string, int>();
+        private readonly Dictionary<string, DateTime> _diag_TradesLastTime = new Dictionary<string, DateTime>();
+        private readonly Dictionary<string, int> _diag_DepthCount = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> _diag_LastTradesPrev = new Dictionary<string, int>();
+        private readonly Dictionary<string, int> _diag_DepthPrev = new Dictionary<string, int>();
+        private int _diag_ProbeFired = 0;
+
+        private void DiagTradeStreamReporter()
+        {
+            Thread.Sleep(15000);
+
+            while (true)
+            {
+                try
+                {
+                    Thread.Sleep(60000);
+
+                    if (ServerStatus != ServerConnectStatus.Connect
+                        || _subscribedSecurities.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    for (int i = 0; i < _subscribedSecurities.Count; i++)
+                    {
+                        string ticker = _subscribedSecurities[i].Name;
+
+                        int trades = 0, depth = 0, tradesPrev = 0, depthPrev = 0;
+                        DateTime lastTrade = DateTime.MinValue, subSend = DateTime.MinValue, ackTime = DateTime.MinValue;
+                        bool seen = false;
+
+                        lock (_depthSubscribeLocker)
+                        {
+                            _diag_TradesCount.TryGetValue(ticker, out trades);
+                            _diag_DepthCount.TryGetValue(ticker, out depth);
+                            _diag_LastTradesPrev.TryGetValue(ticker, out tradesPrev);
+                            _diag_DepthPrev.TryGetValue(ticker, out depthPrev);
+                            _diag_TradesLastTime.TryGetValue(ticker, out lastTrade);
+                            _diag_SubSendTime.TryGetValue(ticker, out subSend);
+                            _diag_LastTradesSuccessTime.TryGetValue(ticker, out ackTime);
+                            seen = _diag_TradesSeen.Contains(ticker);
+                            _diag_LastTradesPrev[ticker] = trades;
+                            _diag_DepthPrev[ticker] = depth;
+                        }
+
+                        string sLast = lastTrade == DateTime.MinValue ? "none" : lastTrade.ToString("HH:mm:ss");
+                        string sSilence = lastTrade == DateTime.MinValue ? "none" : (DateTime.Now - lastTrade).TotalSeconds.ToString("F0") + "s";
+                        string sSub = subSend == DateTime.MinValue ? "none" : subSend.ToString("HH:mm:ss");
+                        string sAck = ackTime == DateTime.MinValue ? "none" : ackTime.ToString("HH:mm:ss");
+
+                        SendLogMessage($"diag D3 {ticker}: trades+{trades - tradesPrev} (total {trades}), lastTrade={sLast}, silence={sSilence}, depth+{depth - depthPrev}, seen={seen}, subSend={sSub}, ack={sAck}", LogMessageType.System);
+                    }
+
+                    // D4: однократный повторный subscribe dataType 2 через 2 минуты после ack.
+                    // Идемпотентность: ответ придёт в D1t (ack/дубль) или в лог ошибок подписки
+                    if (_diag_ProbeFired == 0)
+                    {
+                        string probeTicker = null;
+                        DateTime probeAck = DateTime.MaxValue;
+
+                        lock (_depthSubscribeLocker)
+                        {
+                            foreach (KeyValuePair<string, DateTime> pair in _diag_LastTradesSuccessTime)
+                            {
+                                if (pair.Value != DateTime.MinValue
+                                    && DateTime.Now - pair.Value >= TimeSpan.FromMinutes(2)
+                                    && pair.Value < probeAck)
+                                {
+                                    probeTicker = pair.Key;
+                                    probeAck = pair.Value;
+                                }
+                            }
+                        }
+
+                        if (probeTicker != null && _webSocketPublicList.Count != 0)
+                        {
+                            Security probeSecurity = null;
+
+                            for (int i = 0; i < _subscribedSecurities.Count; i++)
+                            {
+                                if (_subscribedSecurities[i].Name == probeTicker)
+                                {
+                                    probeSecurity = _subscribedSecurities[i];
+                                    break;
+                                }
+                            }
+
+                            if (probeSecurity != null)
+                            {
+                                WebSocket probeSocket = _webSocketPublicList[_webSocketPublicList.Count - 1];
+
+                                if (probeSocket != null && probeSocket.ReadyState == WebSocketState.Open)
+                                {
+                                    _diag_ProbeFired = 1;
+
+                                    string probeFrame = $"{{\"subscribeType\": 0,\"dataType\": 2,\"instruments\": [{{\"ticker\": \"{probeSecurity.Name}\",\"classCode\": \"{GetClassCode(probeSecurity)}\"}}]}}";
+                                    SendLogMessage("diag D4-probe send: " + probeFrame, LogMessageType.System);
+                                    probeSocket.SendAsync(probeFrame);
+                                }
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SendLogMessage("diag reporter error: " + ex.ToString(), LogMessageType.Error);
+                }
+            }
+        }
+
+        #endregion
 
         private void UnsubscribeAllSecurities()
         {
@@ -2233,6 +2374,28 @@ namespace OsEngine.Market.Servers.BCS
 
                     if (response.responseType != null)
                     {
+                        // diag bug-0091: raw-фреймы семейства LastTrades + счётчик живости стакана (raw стакан не логируем — объём)
+                        if (response.responseType.Equals("LastTrades") || response.responseType.Equals("LastTradesSuccess"))
+                        {
+                            SendLogMessage("diag D1t " + (message.Length > 1000 ? message.Substring(0, 1000) + "…" : message), LogMessageType.System);
+                        }
+
+                        lock (_depthSubscribeLocker)
+                        {
+                            if (response.responseType.Equals("OrderBook"))
+                            {
+                                _diag_DepthCount.TryGetValue(response.ticker, out int dCount);
+                                _diag_DepthCount[response.ticker] = dCount + 1;
+                            }
+                            else if (response.responseType.Equals("LastTrades"))
+                            {
+                                _diag_TradesSeen.Add(response.ticker);
+                                _diag_TradesCount.TryGetValue(response.ticker, out int tCount);
+                                _diag_TradesCount[response.ticker] = tCount + 1;
+                                _diag_TradesLastTime[response.ticker] = DateTime.Now;
+                            }
+                        }
+
                         if (response.responseType.Equals("LastTrades"))
                         {
                             if (response.errors != null && response.errors.Count > 0)
@@ -2288,6 +2451,22 @@ namespace OsEngine.Market.Servers.BCS
                         else if (response.responseType.Equals("LastTradesSuccess"))
                         {
                             SendLogMessage($"BCS market data: подписка подтверждена {response.responseType} {response.ticker} {response.classCode}", LogMessageType.System);
+
+                            // diag bug-0091: время отправки подписки до ack + однократный D4-probe повторной подписки
+                            DateTime tSub = DateTime.MinValue;
+
+                            lock (_depthSubscribeLocker)
+                            {
+                                _diag_SubSendTime.TryGetValue(response.ticker, out tSub);
+                            }
+
+                            SendLogMessage($"diag D1a LastTradesSuccess ticker={response.ticker} class={response.classCode} fromSubSend={(tSub == DateTime.MinValue ? "n/a" : (DateTime.Now - tSub).TotalSeconds.ToString("F1") + "s")}", LogMessageType.System);
+
+                            // diag bug-0091: D4-probe откладывается на +2мин после ack; время ack помечается для репортёра
+                            lock (_depthSubscribeLocker)
+                            {
+                                _diag_LastTradesSuccessTime[response.ticker] = DateTime.Now;
+                            }
                         }
                     }
                     else
