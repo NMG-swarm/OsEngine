@@ -1933,7 +1933,7 @@ namespace OsEngine.MCP.Modules
 
             // Писатель сериализован с геттерами/счётчиком/сейвом (BUG-0386). Замок накрывает ровно
             // {взять Parameters; мутации; Save}. NotifyParametersChanged вне: подписчик UI делает
-            // синхронный Dispatcher.Invoke — кольцо UI-ждёт-ллок ↔ MCP-ждёт-UI. GetParams вне:
+            // синхронный Dispatcher.Invoke — кольцо UI-ждёт-лок ↔ MCP-ждёт-UI. GetParams вне:
             // он зовёт Parameters и пересобирает список из свежего бота внутри сейв-пути
             lock (master.ParametersLock)
             {
