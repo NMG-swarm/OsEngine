@@ -1874,6 +1874,8 @@ namespace OsEngine.Market.Servers.Bitfinex
                         continue;
                     }
 
+                    Diag0504ClassifyFrame(message);
+
                     if (message.Contains("trades"))
                     {
                         BitfinexSubscriptionResponse responseTrade = JsonConvert.DeserializeObject<BitfinexSubscriptionResponse>(message);
@@ -1900,6 +1902,46 @@ namespace OsEngine.Market.Servers.Bitfinex
                     Thread.Sleep(5000);
                     SendLogMessage(exception.ToString(), LogMessageType.Error);
                 }
+            }
+        }
+
+        // diag BUG-0502: classification of public trades-socket frames on reader entry.
+        // Logging only, event flow unchanged. Guard is checked before any element access.
+        private void Diag0504ClassifyFrame(string message)
+        {
+            try
+            {
+                if (message.Contains("\"event\""))
+                {
+                    SendLogMessage("DIAG-0504 EVENT " + (message.Length > 120 ? message.Substring(0, 120) : message), LogMessageType.System);
+                    return;
+                }
+
+                List<object> root = JsonConvert.DeserializeObject<List<object>>(message);
+
+                if (root == null || root.Count < 2)
+                {
+                    SendLogMessage("DIAG-0504 FRAME short. Root null: " + (root == null) + ", count: " + (root == null ? 0 : root.Count), LogMessageType.System);
+                    return;
+                }
+
+                object second = root[1];
+
+                System.Collections.IList snapshot = second as System.Collections.IList;
+
+                if (snapshot != null)
+                {
+                    SendLogMessage("DIAG-0504 SNAPSHOT chanId " + Convert.ToInt32(root[0]) + ", trades: " + snapshot.Count + ". Not replayed", LogMessageType.System);
+                    return;
+                }
+
+                System.Collections.IList tradeData = root.Count > 2 ? root[2] as System.Collections.IList : null;
+
+                SendLogMessage("DIAG-0504 UPDATE type " + (second == null ? "null" : second.ToString()) + ", chanId " + Convert.ToInt32(root[0]) + ", fields: " + (tradeData == null ? -1 : tradeData.Count), LogMessageType.System);
+            }
+            catch (Exception exception)
+            {
+                SendLogMessage("DIAG-0504 classification failed: " + exception.Message, LogMessageType.System);
             }
         }
 
@@ -2275,6 +2317,9 @@ namespace OsEngine.Market.Servers.Bitfinex
                 newTrade.Time = TimeManager.GetDateTimeFromTimeStamp(Convert.ToInt64(tradeData[1]));
 
                 NewTradesEvent?.Invoke(newTrade);
+
+                // diag BUG-0502: direct evidence of live-tape delivery
+                SendLogMessage("DIAG-0504 DELIVERED id " + newTrade.Id + ", sec " + newTrade.SecurityNameCode + ", time " + newTrade.Time.ToString("yyyy-MM-dd HH:mm:ss.fff"), LogMessageType.System);
             }
             catch (Exception exception)
             {
