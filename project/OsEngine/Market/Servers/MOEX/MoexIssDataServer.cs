@@ -663,8 +663,9 @@ namespace OsEngine.Market.Servers.MOEX
 
             for (int i = 0; i < requests.Count; i++)
             {
-                string response = GetRequest(requests[i]);
+                string response = GetRequestDiag(requests[i]);
                 responses.Add(response);
+                LogSecuritiesStoreDiag(classes[i], response);
             }
 
             List<Security> result = new List<Security>();
@@ -1005,6 +1006,80 @@ namespace OsEngine.Market.Servers.MOEX
             {
                 SendLogMessage("GetRequest error. Url: " + url + ". " + error.ToString(), LogMessageType.Error);
                 return string.Empty;
+            }
+        }
+
+        // diag bug-0530 (BUG-0529): сбор фактического состава ISS-ответов досок для ТЗ-ред.2.
+        // Только на ветке fix/bug-0530-diag. В PR не попадает. Логи — System, без Error (нет попапа/писка).
+        private string GetRequestDiag(string url)
+        {
+            try
+            {
+                RestRequest requestRest = new RestRequest(Method.GET);
+                RestClient client = new RestClient(url);
+                IRestResponse response = client.Execute(requestRest);
+                string content = response.Content ?? string.Empty;
+
+                SendLogMessage("DIAG http. Url: " + url
+                    + ". Status: " + response.StatusCode
+                    + ". Transport: " + response.ResponseStatus
+                    + ". ContentLength: " + content.Length, LogMessageType.System);
+
+                return content;
+            }
+            catch (Exception error)
+            {
+                SendLogMessage("DIAG http error. Url: " + url + ". " + error.ToString(), LogMessageType.System);
+                return string.Empty;
+            }
+        }
+
+        // diag bug-0530: columns + первые строки data store securities по каждому boards-response.
+        private void LogSecuritiesStoreDiag(string classId, string response)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(response))
+                {
+                    SendLogMessage("DIAG store. Class: " + classId + ". EMPTY RESPONSE", LogMessageType.System);
+                    return;
+                }
+
+                JObject json = JObject.Parse(response);
+                JToken store = json["securities"];
+
+                if (store == null)
+                {
+                    string storeNames = "";
+                    foreach (JProperty prop in json.Properties())
+                    {
+                        storeNames += prop.Name + ",";
+                    }
+                    SendLogMessage("DIAG store. Class: " + classId + ". NO securities STORE. Stores: " + storeNames, LogMessageType.System);
+                    return;
+                }
+
+                string columns = store["columns"] == null ? "null" : store["columns"].ToString(Newtonsoft.Json.Formatting.None);
+                JArray data = store["data"] as JArray;
+                int dataCount = data == null ? -1 : data.Count;
+
+                SendLogMessage("DIAG store. Class: " + classId + ". Columns: " + columns + ". DataCount: " + dataCount, LogMessageType.System);
+
+                if (data == null || dataCount == 0)
+                {
+                    SendLogMessage("DIAG store. Class: " + classId + ". STORE EMPTY", LogMessageType.System);
+                    return;
+                }
+
+                int rows = Math.Min(3, dataCount);
+                for (int j = 0; j < rows; j++)
+                {
+                    SendLogMessage("DIAG store. Class: " + classId + ". Row " + j + ": " + data[j].ToString(Newtonsoft.Json.Formatting.None), LogMessageType.System);
+                }
+            }
+            catch (Exception error)
+            {
+                SendLogMessage("DIAG store parse error. Class: " + classId + ". " + error.ToString(), LogMessageType.System);
             }
         }
 
