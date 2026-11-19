@@ -325,7 +325,8 @@ namespace OsEngine.Market.Servers.Bitfinex
                             if (decimal.TryParse(minSizeString, System.Globalization.NumberStyles.Float,
                                         System.Globalization.CultureInfo.InvariantCulture, out minSize))
                             {
-                                minSizes.Add(pair, minSize);
+                                // GetSecurities вызывается повторно (reload/переподключение), словарь не чистится — Add кидает duplicate key
+                                minSizes[pair] = minSize;
                             }
                         }
                     }
