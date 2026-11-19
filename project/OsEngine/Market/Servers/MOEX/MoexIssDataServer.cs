@@ -10,6 +10,7 @@ using OsEngine.Market.Servers.Entity;
 using RestSharp;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Windows;
 
@@ -799,7 +800,7 @@ namespace OsEngine.Market.Servers.MOEX
                 newCandle.TimeStart = candlesOld[i].TimeStart;
 
                 if (startTf == 1
-                    && (endTf == 5 || endTf == 10 || endTf == 15))
+                    && (endTf == 2 || endTf == 3 || endTf == 5 || endTf == 10 || endTf == 15))
                 {
                     while (newCandle.TimeStart.Minute != 0
                         && newCandle.TimeStart.Minute % endTf != 0)
@@ -904,8 +905,21 @@ namespace OsEngine.Market.Servers.MOEX
                     break;
                 }
 
-                candles.AddRange(curCandles);
-                lastTime = curCandles[curCandles.Count - 1].TimeStart;
+                DateTime lastTimeInPage = curCandles[curCandles.Count - 1].TimeStart;
+
+                // offset-пагинация ISS не гарантирует непрерывности набора между страницами:
+                // повторные минуты на стыке ломают сетку ТФ в ConcateCandles
+                if (candles.Count > 0)
+                {
+                    DateTime lastAddedTime = candles[candles.Count - 1].TimeStart;
+                    candles.AddRange(curCandles.Where(c => c.TimeStart > lastAddedTime));
+                }
+                else
+                {
+                    candles.AddRange(curCandles);
+                }
+
+                lastTime = lastTimeInPage;
             }
 
             return candles;
