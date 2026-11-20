@@ -2357,7 +2357,7 @@ namespace OsEngine.Market.Servers.Bitfinex.BitfinexFutures
             {
                 List<object> root = JsonConvert.DeserializeObject<List<object>>(message);
 
-                if (root == null && root.Count < 2)
+                if (root == null || root.Count < 3)
                 {
                     SendLogMessage("UpdateTrade> Root json empty or too short", LogMessageType.Error);
                     return;
@@ -2367,7 +2367,7 @@ namespace OsEngine.Market.Servers.Bitfinex.BitfinexFutures
 
                 int channelId = Convert.ToInt32(root[0]);
 
-                if (tradeData == null && tradeData.Count < 4)
+                if (tradeData == null || tradeData.Count < 4)
                 {
                     SendLogMessage("UpdateTrade> Trade payload json empty or too short", LogMessageType.Error);
                     return;
