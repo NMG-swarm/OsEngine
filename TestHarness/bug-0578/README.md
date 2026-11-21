@@ -29,6 +29,8 @@ dotnet build ... -p:EngineProject=<worktree-master>\project\OsEngine\OsEngine.cs
 fix-режим: exit 0; base-режим: exit 0. Выходы: 0 PASS, 1 FAIL, 3 unhandled, 4 watchdog.
 
 - K1: матрица TryParseStep (инвариантный парсер; ru-RU не ломает; `1e-999` -> false; 27-значная дробь не бросает).
+- K1b: «1,5»->false (запятая не инвариантный разделитель), «1e999»->false (overflow), «+0.01»->true (LeadingSign),
+  «  0.01  »->true (Leading/TrailingWhite у NumberStyles.Float).
 - K2: A/B off-by-one — base: `list.Count==1` даёт 0 бумаг, сентинел режет последнюю; fix: последняя включительно.
 - K3: A/B type-mismatch вложенного фильтра. FACT (иное поведение, чем в ТЗ, честно): `priceFilter:[]` и `:123`
   бросают JsonSerializationException на десериализации (в приложении — catch GetSecuritiesByCategory:223,

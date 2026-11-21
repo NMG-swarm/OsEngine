@@ -347,6 +347,28 @@ namespace Bug0578Tests
             finally { CultureInfo.CurrentCulture = prev; }
         }
 
+        // ---- K1b: дополняющие входы матрицы (ОдТС дельта-ревью) ----------------------
+
+        static void RunK1b()
+        {
+            Console.WriteLine("== K1b: «1,5»->false, «1e999»->false, «+0.01»->true, «  0.01  »->true ==");
+            var cases = new (string v, bool expect, string why)[]
+            {
+                ("1,5", false, "запятая не инвариантный разделитель (Thousands group=1 битый)"),
+                ("1e999", false, "overflow экспоненты -> false"),
+                ("+0.01", true, "NumberStyles.Float ведёт LeadingSign -> true"),
+                ("  0.01  ", true, "Float ведёт Leading/TrailingWhite -> true"),
+            };
+            foreach (var c in cases)
+            {
+                bool threw = false; string tname = ""; decimal val = 0m; bool ok = false;
+                try { (ok, val) = TryParseStep(c.v); }
+                catch (Exception e) { threw = true; tname = e.GetType().Name; }
+                Check("K1b", "TryParseStep(\"" + c.v + "\") " + c.why + " -> " + c.expect,
+                    !threw && ok == c.expect, threw ? "бросок " + tname : "ok=" + ok + " val=" + D(val));
+            }
+        }
+
         // ---- K2: off-by-one сентинел A/B ---------------------------------------------
 
         static void RunK2fix()
@@ -610,6 +632,7 @@ namespace Bug0578Tests
                     RunT5();
                     RunT6();
                     RunK1();
+                    RunK1b();
                     RunK2fix();
                     RunK3fix();
                     RunK4();
