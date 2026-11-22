@@ -864,6 +864,11 @@ namespace OsEngine.Market.Servers.Woo
 
         private void DeleteWebSocketConnection()
         {
+            // diag BUG-0624 (bug-0628): метка teardown относительно open. diag-ветка, в PR не входит
+            SendLogMessage("DIAG DeletePrivate BUG0628 action=teardown socketHash="
+                + (_webSocketPrivate == null ? "null" : _webSocketPrivate.GetHashCode().ToString()),
+                LogMessageType.System);
+
             if (_webSocketPublic != null)
             {
                 try
@@ -1140,6 +1145,16 @@ namespace OsEngine.Market.Servers.Woo
         {
             try
             {
+                // diag BUG-0624 (bug-0628): состояние точки приёма ДО любой работы. diag-ветка, в PR не входит
+                WebSocket webSocketPrivateDiag = arg1 as WebSocket;
+
+                SendLogMessage("DIAG OnOpen BUG0628 fieldNull=" + (_webSocketPrivate == null)
+                    + " sameRef=" + ReferenceEquals(arg1, _webSocketPrivate)
+                    + " readyState=" + (webSocketPrivateDiag == null ? "null" : webSocketPrivateDiag.ReadyState.ToString())
+                    + " serverStatus=" + ServerStatus
+                    + " arg1Hash=" + (arg1 == null ? "null" : arg1.GetHashCode().ToString()),
+                    LogMessageType.System);
+
                 CheckSocketsActivate();
                 SendLogMessage("BitMartSpot WebSocket Private connection open", LogMessageType.System);
 
