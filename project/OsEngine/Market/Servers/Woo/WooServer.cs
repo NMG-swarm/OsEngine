@@ -73,6 +73,8 @@ namespace OsEngine.Market.Servers.Woo
 
         public void Connect(WebProxy proxy)
         {
+            Diag0636("Connect ENTER");
+
             _apiKey = ((ServerParameterString)ServerParameters[0]).Value;
             _secretKey = ((ServerParameterPassword)ServerParameters[1]).Value;
             HedgeMode = ((ServerParameterBool)ServerParameters[2]).Value;
@@ -108,6 +110,7 @@ namespace OsEngine.Market.Servers.Woo
                     {
                         CreatePublicWebSocketConnect();
                         CreatePrivateWebSocketConnect();
+                        Diag0636("Connect SOCKETS-LAUNCHED");
                     }
                     else
                     {
@@ -130,6 +133,8 @@ namespace OsEngine.Market.Servers.Woo
 
         public void Dispose()
         {
+            Diag0636("Dispose ENTER");
+
             try
             {
                 UnsubscribeFromAllWebSockets();
@@ -154,6 +159,8 @@ namespace OsEngine.Market.Servers.Woo
             FIFOListWebSocketPrivateMessage = new ConcurrentQueue<string>();
 
             Disconnect();
+
+            Diag0636("Dispose EXIT");
         }
 
         public void Disconnect()
@@ -161,7 +168,13 @@ namespace OsEngine.Market.Servers.Woo
             if (ServerStatus != ServerConnectStatus.Disconnect)
             {
                 ServerStatus = ServerConnectStatus.Disconnect;
+                Diag0636($"DISC DisconnectEvent-FIRE priv={DiagHash0636(_webSocketPrivate)} pubN={_webSocketPublic.Count}");
                 DisconnectEvent?.Invoke();
+                Diag0636("DISC DisconnectEvent-DONE");
+            }
+            else
+            {
+                Diag0636("DISC skip already-disconnect");
             }
         }
 
@@ -215,7 +228,13 @@ namespace OsEngine.Market.Servers.Woo
 
         public void SetPositionMode()
         {
+            Diag0636("SETPOS ENTER");
+
             _rateGateSendOrder.WaitToProceed();
+
+            Diag0636("SETPOS gate-passed");
+
+            long _tP0636 = Environment.TickCount64;
 
             try
             {
@@ -275,6 +294,8 @@ namespace OsEngine.Market.Servers.Woo
             {
                 SendLogMessage(ex.ToString(), LogMessageType.Error);
             }
+
+            Diag0636($"SETPOS DONE elapsed={Environment.TickCount64 - _tP0636}ms");
         }
 
         #endregion
@@ -864,6 +885,8 @@ namespace OsEngine.Market.Servers.Woo
 
         private void DeleteWebSocketConnection()
         {
+            Diag0636($"TEARDOWN begin priv={DiagHash0636(_webSocketPrivate)} pubN={_webSocketPublic.Count}");
+
             if (_webSocketPublic != null)
             {
                 try
@@ -910,26 +933,51 @@ namespace OsEngine.Market.Servers.Woo
 
                 _webSocketPrivate = null;
             }
+
+            Diag0636("TEARDOWN end");
         }
 
         private string _socketActivateLocker = "socketAcvateLocker";
+
+        // diag bug0636: ordering probe for Connect/Disconnect teardown races. diag branch only, NOT for PR.
+        private static long _diagSeq0636;
+
+        private void Diag0636(string what)
+        {
+            long seq = System.Threading.Interlocked.Increment(ref _diagSeq0636);
+            SendLogMessage($"DIAG bug0636 seq={seq} t={Environment.TickCount64} thr={Environment.CurrentManagedThreadId} inst={GetHashCode()} {what}", LogMessageType.System);
+        }
+
+        private static string DiagHash0636(object o)
+        {
+            if (o == null)
+            {
+                return "null";
+            }
+
+            return o.GetHashCode().ToString();
+        }
 
         private void CheckSocketsActivate()
         {
             lock (_socketActivateLocker)
             {
+                Diag0636($"ACT ENTER-LOCK priv={DiagHash0636(_webSocketPrivate)} pubN={_webSocketPublic.Count} status={ServerStatus}");
+
                 // bug-0628: поле читаем один раз — teardown может обнулить его между двумя чтениями
                 WebSocket webSocketPrivate = _webSocketPrivate;
 
                 if (webSocketPrivate == null
                     || webSocketPrivate.ReadyState != WebSocketState.Open)
                 {
+                    Diag0636($"ACT skip#1 priv={DiagHash0636(webSocketPrivate)} status={ServerStatus}");
                     Disconnect();
                     return;
                 }
 
                 if (_webSocketPublic.Count == 0)
                 {
+                    Diag0636("ACT skip#2 pub-empty");
                     Disconnect();
                     return;
                 }
@@ -939,6 +987,7 @@ namespace OsEngine.Market.Servers.Woo
                 if (webSocketPublic == null
                     || webSocketPublic?.ReadyState != WebSocketState.Open)
                 {
+                    Diag0636($"ACT skip#3 pub0={DiagHash0636(webSocketPublic)} status={ServerStatus}");
                     Disconnect();
                     return;
                 }
@@ -947,12 +996,20 @@ namespace OsEngine.Market.Servers.Woo
                 {
                     ServerStatus = ServerConnectStatus.Connect;
 
+                    Diag0636($"ACT ConnectEvent-FIRE priv={DiagHash0636(webSocketPrivate)} pub0={DiagHash0636(webSocketPublic)}");
+
                     if (ConnectEvent != null)
                     {
                         ConnectEvent();
                     }
 
+                    Diag0636("ACT ConnectEvent-DONE");
+
                     SetPositionMode();
+                }
+                else
+                {
+                    Diag0636($"ACT skip#4 status={ServerStatus}");
                 }
             }
         }
@@ -967,12 +1024,16 @@ namespace OsEngine.Market.Servers.Woo
             {
                 if (ServerStatus != ServerConnectStatus.Disconnect)
                 {
+                    Diag0636($"CLOSE pub arg1={DiagHash0636(arg1)} status={ServerStatus}");
+
                     string message = this.GetType().Name + OsLocalization.Market.Message101 + "\n";
                     message += OsLocalization.Market.Message102;
 
                     SendLogMessage(message, LogMessageType.Error);
                     ServerStatus = ServerConnectStatus.Disconnect;
+                    Diag0636("DISC(pub-socket) DisconnectEvent-FIRE");
                     DisconnectEvent?.Invoke();
+                    Diag0636("DISC(pub-socket) DisconnectEvent-DONE");
                 }
             }
             catch (Exception ex)
@@ -1048,8 +1109,14 @@ namespace OsEngine.Market.Servers.Woo
             {
                 if (ServerStatus == ServerConnectStatus.Disconnect)
                 {
+                    Diag0636($"OPEN pub arg1={DiagHash0636(arg1)} status={ServerStatus}");
+
                     SendLogMessage("Woo WebSocket Public connection open", LogMessageType.System);
                     CheckSocketsActivate();
+                }
+                else
+                {
+                    Diag0636($"OPEN pub skip status={ServerStatus} arg1={DiagHash0636(arg1)}");
                 }
             }
             catch (Exception ex)
@@ -1124,12 +1191,16 @@ namespace OsEngine.Market.Servers.Woo
             {
                 if (ServerStatus != ServerConnectStatus.Disconnect)
                 {
+                    Diag0636($"CLOSE priv arg1={DiagHash0636(arg1)} field={DiagHash0636(_webSocketPrivate)} status={ServerStatus}");
+
                     string message = this.GetType().Name + OsLocalization.Market.Message101 + "\n";
                     message += OsLocalization.Market.Message102;
 
                     SendLogMessage(message, LogMessageType.Error);
                     ServerStatus = ServerConnectStatus.Disconnect;
+                    Diag0636("DISC(priv-socket) DisconnectEvent-FIRE");
                     DisconnectEvent?.Invoke();
+                    Diag0636("DISC(priv-socket) DisconnectEvent-DONE");
                 }
             }
             catch (Exception ex)
@@ -1144,14 +1215,19 @@ namespace OsEngine.Market.Servers.Woo
             {
                 WebSocket webSocketPrivate = arg1 as WebSocket;
 
+                Diag0636($"OPEN priv arg1={DiagHash0636(arg1)} field={DiagHash0636(_webSocketPrivate)} sameRef={ReferenceEquals(arg1, _webSocketPrivate)} status={ServerStatus}");
+
                 // OnOpen диспетчится на потоке-продолжении connect; за рукопожатие сервер могли
                 // остановить (DeleteWebSocketConnection) или переподключить. Работаем только с текущим сокетом.
                 if (webSocketPrivate == null
                     || !ReferenceEquals(webSocketPrivate, _webSocketPrivate)
                     || webSocketPrivate.ReadyState != WebSocketState.Open)
                 {
+                    Diag0636("OPEN priv FAIL-GUARD");
                     return;
                 }
+
+                Diag0636("OPEN priv PASS-GUARD");
 
                 CheckSocketsActivate();
                 SendLogMessage("Woo WebSocket Private connection open", LogMessageType.System);
@@ -1178,6 +1254,7 @@ namespace OsEngine.Market.Servers.Woo
                 {
                     if (ServerStatus != ServerConnectStatus.Connect)
                     {
+                        Diag0636($"HB quiesce status={ServerStatus}");
                         Thread.Sleep(2000);
                         continue;
                     }
@@ -1191,12 +1268,16 @@ namespace OsEngine.Market.Servers.Woo
                         {
                             long timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                             webSocketPublic.SendAsync($"{{ \"cmd\": \"PING\", \"ts\": {timestamp} }}");
+                            Diag0636($"HB PING pub i={i} hash={DiagHash0636(webSocketPublic)}");
                         }
                         else
                         {
+                            Diag0636($"HB pub[{i}] not-open hash={DiagHash0636(webSocketPublic)} -> Disconnect");
                             Disconnect();
                         }
                     }
+
+                    WebSocket webSocketPrivate0636 = _webSocketPrivate;
 
                     if (_webSocketPrivate != null &&
                         (_webSocketPrivate.ReadyState == WebSocketState.Open ||
@@ -1204,9 +1285,11 @@ namespace OsEngine.Market.Servers.Woo
                     {
                         long timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
                         _webSocketPrivate.SendAsync($"{{ \"cmd\": \"PING\", \"ts\": {timestamp} }}");
+                        Diag0636($"HB PING priv hash={DiagHash0636(webSocketPrivate0636)}");
                     }
                     else
                     {
+                        Diag0636($"HB priv not-open hash={DiagHash0636(webSocketPrivate0636)} -> Disconnect");
                         Disconnect();
                     }
                 }
