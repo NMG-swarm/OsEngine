@@ -487,6 +487,31 @@ namespace OsEngine.Market.Servers.MFD
 
             string[] lines = response.Split('\n');
 
+            // diag bug-0642: подтверждение формы ответа при AddHeader=false. На diag-ветке, в PR не попадает.
+            int diagNonEmpty = 0;
+
+            for (int diagI = 0; diagI < lines.Length; diagI++)
+            {
+                if (!string.IsNullOrWhiteSpace(lines[diagI]))
+                {
+                    diagNonEmpty++;
+                }
+            }
+
+            SendLogMessage($"DIAG bug-0642 GetTickDataToSecurity: request AddHeader=false RecordFormat=2. lines.Length={lines.Length}, nonEmpty={diagNonEmpty}", LogMessageType.System);
+
+            for (int diagI = 0; diagI < Math.Min(3, lines.Length); diagI++)
+            {
+                string diagLine = (lines[diagI] ?? "").Replace("\r", "\\r");
+
+                if (diagLine.Length > 120)
+                {
+                    diagLine = diagLine.Substring(0, 120);
+                }
+
+                SendLogMessage($"DIAG bug-0642 response L{diagI}: {diagLine}", LogMessageType.System);
+            }
+
             List<Trade> trades = new List<Trade>();
 
             int badTicks = 0;
@@ -531,6 +556,15 @@ namespace OsEngine.Market.Servers.MFD
             if (badTicks > 0)
             {
                 SendLogMessage($"GetTickDataToSecurity: skipped {badTicks} invalid lines", LogMessageType.Error);
+            }
+
+            // diag bug-0642: итог разбора против фактической длины ответа. На diag-ветке, в PR не попадает.
+            SendLogMessage($"DIAG bug-0642 GetTickDataToSecurity after parse: trades.Count={trades.Count}, badTicks={badTicks}, nonEmpty={diagNonEmpty}, nonEmpty_minus_1={diagNonEmpty - 1}", LogMessageType.System);
+
+            if (trades.Count > 0)
+            {
+                Trade diagFirst = trades[0];
+                SendLogMessage($"DIAG bug-0642 first parsed trade: Time={diagFirst.Time:yyyyMMddHHmmss} Price={diagFirst.Price} Volume={diagFirst.Volume}", LogMessageType.System);
             }
 
             return trades;
