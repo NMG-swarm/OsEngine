@@ -23,6 +23,9 @@ namespace OsEngine
             // ServerMaster-лог ещё не активирован, оконного состояния и Reboot нет — рутин самостоятельный
             Logging.StartupCrashGuard.Attach();
 
+            // bug-0666 DIAG: first-chance+heartbeat, активен только при OSENGINE_DIAG_FIRSTCHANCE=1
+            Logging.FirstChanceProbe.AttachIfEnabled();
+
             // BUG-0202: дефолтный WinForms ThreadExceptionDialog сам падает в GDI+ MeasureString на
             // разметке текста исключения (#331), первичная ошибка теряется. CatchException переводит
             // необработанные WinForms-исключения в Application.ThreadException (хендлер в MainWindow).
