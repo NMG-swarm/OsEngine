@@ -1,0 +1,196 @@
+﻿08:54:38 === UI-стенд FEATURE-0139 mode=main, OsEngine: C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Worktrees\OsEngine\project\OsEngine\bin\Debug ===
+08:54:38 StartupUri property: Value cannot be null. (Parameter 'value') — пробуем поле
+08:54:41 OK   K1 FindName combo/grid
+08:54:41 OK   K1 AC1: ComboBox IsEditable=True
+08:54:41 OK   K1: список 1..50 сохранён (Items=50)
+08:54:41 OK   K1: поле показывает default 1 (Text=1)
+08:54:41 OK   K1: 1 бар по умолчанию (_children=1)
+08:54:41 OK   K1: Height области 18 (Height=18)
+08:54:41 OK   K1: MinHeight == Height
+08:54:41 скриншот C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Stands\FEATURE-0139-UI\bin\Debug\net10.0-windows\ui-out\01_default.png (1110x700)
+08:54:43 OK   K2 AC1: после Enter поле = 64 (Text=64)
+08:54:43 OK   K2 AC3: 64 бара (children=64)
+08:54:43 OK   K2 AC3: высота бара 6px (bar=6)
+08:54:43 OK   K2 AC3: Height=64*6+10=394 (Height=394)
+08:54:43 OK   K2 AC4: ThreadsCount=64
+08:54:43 OK   K2 AC4: строка 1 файла = 64
+08:54:43 OK   K2 AC9: событие ровно 1 раз (Enter+подавление) = 1
+08:54:43 скриншот C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Stands\FEATURE-0139-UI\bin\Debug\net10.0-windows\ui-out\02_typed_64.png (1110x700)
+08:54:44 OK   K2b AC9: после LostFocus событий всё ещё 1 (1)
+08:54:44 OK   K2b AC4: файл по-прежнему 64
+08:54:44 OK   K2b: двойные события не перезаписали файл
+08:54:46 OK   K3 AC2: невалидный ввод откачен, поле вернулось к 64 (Text=64)
+08:54:46 OK   K3 AC2: ThreadsCount не изменился
+08:54:46 OK   K3 AC2: файл не тронут
+08:54:46 K3 сообщение лога: Недопустимое число потоков (threads) в поле ввода. Допустимый диапазон 1..256
+08:54:46 OK   K3 AC2: Error-сообщение с маркером threads ушло в журнал
+08:54:46 скриншот C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Stands\FEATURE-0139-UI\bin\Debug\net10.0-windows\ui-out\03_rejected_rollback.png (1110x700)
+08:54:46 OK   K2g: dropdown открыт
+08:54:47 OK   K2g AC1: Enter при открытом dropdown закрыл список (штатно)
+08:54:47 OK   K2g: Enter подтвердил выделенный пункт списка (Text=2)
+08:54:47 OK   K2g: пункт применён (master=2)
+08:54:48 OK   K2g: восстановлено 64 для K4/K7
+08:54:49 OK   K4 AC1/AC3: выбор из списка -> 4 бара (4)
+08:54:49 OK   K4: ThreadsCount=4
+08:54:49 OK   K4b: восстановлено 64 перед K7
+08:54:49 K7 зонд: клик по стрелке комбоба на 1000;298, открыт до=False
+08:54:51 K7 зонд: открыт после=True (сменилось=True)
+08:54:51 K7: открываю dropdown кликом по стрелке на 1000;298
+08:54:53 OK   K7: контейнер пункта «4» реализован
+08:54:53 K7: dropdown открыт перед кликом=True
+08:54:53 K7: клик по экранной точке 991;321 (dip 991;321 top-left 932;311) | под точкой hwnd=0x3F60432 | popup hwnd=0x3F60432 | main hwnd=0x1FA036E
+08:54:54 OK   K7: физический клик отправлен (курсор на пункте, hover выдержан)
+08:54:55 K7: mouse did not commit at popup (documented) - keyboard Down + Enter
+08:54:57 OK   K7: пункт из dropdown закоммичен штатным путём (Text=5)
+08:54:57 OK   K7: список закрыт после выбора
+08:54:57 OK   K7: ThreadsCount=5 (master=5)
+08:54:57 OK   K7: бары перестроены под пункт (children=5)
+08:54:57 OK   K7: выбор из списка применён ровно один раз (delta=1)
+08:54:57 OK   K7: после focus-away файл=5 без откатов (file=5)
+08:54:57 OK   K7: гонка LostFocus/SelectionChanged не удвоила применение (delta=1)
+08:54:57 OK   K7: поле осталось 5 (Text=5)
+08:54:58 OK   K8 AC3: 256 баров (children=256)
+08:54:58 OK   K8 AC3: Height=256*1+10=266 (Height=266)
+08:54:58 OK   K8: отрисовка влезает в область (Actual=266)
+08:54:58 OK   K8: файл 256
+08:54:58 скриншот C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Stands\FEATURE-0139-UI\bin\Debug\net10.0-windows\ui-out\04_typed_256.png (1110x700)
+08:54:59 OK   K5 AC9: событийный путь выставил поле в 100 (Text=100)
+08:54:59 OK   K5 AC9: 100 баров (100)
+08:55:00 OK   K5 AC9: рекурсии события нет (8)
+08:55:01 OK   K9: фоновый сеттер сохранил 32 (file=32)
+08:55:01 OK   K9 AC9: поле отмаршаллился в 32 (Text=32)
+08:55:01 OK   K9 AC9: 32 бара (32)
+08:55:01 OK   K9 AC9: ровно одно событие, рекурсии нет (delta=1)
+08:55:01 OK   K9: UI-поток жив (нет взаимоблока на хоппе)
+08:55:01 завершение, провалов: 0
+08:55:02 === UI-стенд FEATURE-0139 mode=main, OsEngine: C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Worktrees\OsEngine\project\OsEngine\bin\Debug ===
+08:55:02 StartupUri property: Value cannot be null. (Parameter 'value') — пробуем поле
+08:55:02 UI_THEME override -> Gray
+08:55:05 OK   K1 FindName combo/grid
+08:55:05 OK   K1 AC1: ComboBox IsEditable=True
+08:55:05 OK   K1: список 1..50 сохранён (Items=50)
+08:55:05 OK   K1: поле показывает default 1 (Text=1)
+08:55:05 OK   K1: 1 бар по умолчанию (_children=1)
+08:55:05 OK   K1: Height области 18 (Height=18)
+08:55:05 OK   K1: MinHeight == Height
+08:55:05 скриншот C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Stands\FEATURE-0139-UI\bin\Debug\net10.0-windows\ui-out\01_default.png (1110x700)
+08:55:07 OK   K2 AC1: после Enter поле = 64 (Text=64)
+08:55:07 OK   K2 AC3: 64 бара (children=64)
+08:55:07 OK   K2 AC3: высота бара 6px (bar=6)
+08:55:07 OK   K2 AC3: Height=64*6+10=394 (Height=394)
+08:55:07 OK   K2 AC4: ThreadsCount=64
+08:55:07 OK   K2 AC4: строка 1 файла = 64
+08:55:07 OK   K2 AC9: событие ровно 1 раз (Enter+подавление) = 1
+08:55:07 скриншот C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Stands\FEATURE-0139-UI\bin\Debug\net10.0-windows\ui-out\02_typed_64.png (1110x700)
+08:55:08 OK   K2b AC9: после LostFocus событий всё ещё 1 (1)
+08:55:08 OK   K2b AC4: файл по-прежнему 64
+08:55:08 OK   K2b: двойные события не перезаписали файл
+08:55:10 OK   K3 AC2: невалидный ввод откачен, поле вернулось к 64 (Text=64)
+08:55:10 OK   K3 AC2: ThreadsCount не изменился
+08:55:10 OK   K3 AC2: файл не тронут
+08:55:10 K3 сообщение лога: Недопустимое число потоков (threads) в поле ввода. Допустимый диапазон 1..256
+08:55:10 OK   K3 AC2: Error-сообщение с маркером threads ушло в журнал
+08:55:10 скриншот C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Stands\FEATURE-0139-UI\bin\Debug\net10.0-windows\ui-out\03_rejected_rollback.png (1110x700)
+08:55:10 OK   K2g: dropdown открыт
+08:55:11 OK   K2g AC1: Enter при открытом dropdown закрыл список (штатно)
+08:55:11 OK   K2g: Enter подтвердил выделенный пункт списка (Text=1)
+08:55:11 OK   K2g: пункт применён (master=1)
+08:55:11 OK   K2g: восстановлено 64 для K4/K7
+08:55:12 OK   K4 AC1/AC3: выбор из списка -> 4 бара (4)
+08:55:12 OK   K4: ThreadsCount=4
+08:55:13 OK   K4b: восстановлено 64 перед K7
+08:55:13 K7 зонд: клик по стрелке комбоба на 1000;298, открыт до=False
+08:55:15 K7 зонд: открыт после=True (сменилось=True)
+08:55:15 K7: открываю dropdown кликом по стрелке на 1000;298
+08:55:17 OK   K7: контейнер пункта «4» реализован
+08:55:17 K7: dropdown открыт перед кликом=True
+08:55:17 K7: клик по экранной точке 991;321 (dip 991;321 top-left 932;311) | под точкой hwnd=0x1450126 | popup hwnd=0x1450126 | main hwnd=0x2390394
+08:55:18 OK   K7: физический клик отправлен (курсор на пункте, hover выдержан)
+08:55:19 K7: mouse did not commit at popup (documented) - keyboard Down + Enter
+08:55:20 OK   K7: пункт из dropdown закоммичен штатным путём (Text=5)
+08:55:20 OK   K7: список закрыт после выбора
+08:55:20 OK   K7: ThreadsCount=5 (master=5)
+08:55:20 OK   K7: бары перестроены под пункт (children=5)
+08:55:20 OK   K7: выбор из списка применён ровно один раз (delta=1)
+08:55:21 OK   K7: после focus-away файл=5 без откатов (file=5)
+08:55:21 OK   K7: гонка LostFocus/SelectionChanged не удвоила применение (delta=1)
+08:55:21 OK   K7: поле осталось 5 (Text=5)
+08:55:22 OK   K8 AC3: 256 баров (children=256)
+08:55:22 OK   K8 AC3: Height=256*1+10=266 (Height=266)
+08:55:22 OK   K8: отрисовка влезает в область (Actual=266)
+08:55:22 OK   K8: файл 256
+08:55:22 скриншот C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Stands\FEATURE-0139-UI\bin\Debug\net10.0-windows\ui-out\04_typed_256.png (1110x700)
+08:55:23 OK   K5 AC9: событийный путь выставил поле в 100 (Text=100)
+08:55:23 OK   K5 AC9: 100 баров (100)
+08:55:24 OK   K5 AC9: рекурсии события нет (8)
+08:55:25 OK   K9: фоновый сеттер сохранил 32 (file=32)
+08:55:25 OK   K9 AC9: поле отмаршаллился в 32 (Text=32)
+08:55:25 OK   K9 AC9: 32 бара (32)
+08:55:25 OK   K9 AC9: ровно одно событие, рекурсии нет (delta=1)
+08:55:25 OK   K9: UI-поток жив (нет взаимоблока на хоппе)
+08:55:25 завершение, провалов: 0
+08:55:30 === UI-стенд FEATURE-0139 mode=main, OsEngine: C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Worktrees\OsEngine\project\OsEngine\bin\Debug ===
+08:55:30 StartupUri property: Value cannot be null. (Parameter 'value') — пробуем поле
+08:55:33 OK   K1 FindName combo/grid
+08:55:33 OK   K1 AC1: ComboBox IsEditable=True
+08:55:33 OK   K1: список 1..50 сохранён (Items=50)
+08:55:33 OK   K1: поле показывает default 1 (Text=1)
+08:55:33 OK   K1: 1 бар по умолчанию (_children=1)
+08:55:33 OK   K1: Height области 18 (Height=18)
+08:55:33 OK   K1: MinHeight == Height
+08:55:33 скриншот C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Stands\FEATURE-0139-UI\bin\Debug\net10.0-windows\ui-out\01_default.png (1110x700)
+08:55:35 OK   K2 AC1: после Enter поле = 64 (Text=64)
+08:55:35 OK   K2 AC3: 64 бара (children=64)
+08:55:35 OK   K2 AC3: высота бара 6px (bar=6)
+08:55:35 OK   K2 AC3: Height=64*6+10=394 (Height=394)
+08:55:35 OK   K2 AC4: ThreadsCount=64
+08:55:35 OK   K2 AC4: строка 1 файла = 64
+08:55:35 OK   K2 AC9: событие ровно 1 раз (Enter+подавление) = 1
+08:55:35 скриншот C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Stands\FEATURE-0139-UI\bin\Debug\net10.0-windows\ui-out\02_typed_64.png (1110x700)
+08:55:36 OK   K2b AC9: после LostFocus событий всё ещё 1 (1)
+08:55:36 OK   K2b AC4: файл по-прежнему 64
+08:55:36 OK   K2b: двойные события не перезаписали файл
+08:55:38 OK   K3 AC2: невалидный ввод откачен, поле вернулось к 64 (Text=64)
+08:55:38 OK   K3 AC2: ThreadsCount не изменился
+08:55:38 OK   K3 AC2: файл не тронут
+08:55:38 K3 сообщение лога: Недопустимое число потоков (threads) в поле ввода. Допустимый диапазон 1..256
+08:55:38 OK   K3 AC2: Error-сообщение с маркером threads ушло в журнал
+08:55:38 скриншот C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Stands\FEATURE-0139-UI\bin\Debug\net10.0-windows\ui-out\03_rejected_rollback.png (1110x700)
+08:55:38 OK   K2g: dropdown открыт
+08:55:39 OK   K2g AC1: Enter при открытом dropdown закрыл список (штатно)
+08:55:39 OK   K2g: Enter подтвердил выделенный пункт списка (Text=2)
+08:55:39 OK   K2g: пункт применён (master=2)
+08:55:40 OK   K2g: восстановлено 64 для K4/K7
+08:55:41 OK   K4 AC1/AC3: выбор из списка -> 4 бара (4)
+08:55:41 OK   K4: ThreadsCount=4
+08:55:41 OK   K4b: восстановлено 64 перед K7
+08:55:41 K7 зонд: клик по стрелке комбоба на 1000;298, открыт до=False
+08:55:43 K7 зонд: открыт после=True (сменилось=True)
+08:55:43 K7: открываю dropdown кликом по стрелке на 1000;298
+08:55:45 OK   K7: контейнер пункта «4» реализован
+08:55:45 K7: dropdown открыт перед кликом=True
+08:55:45 K7: клик по экранной точке 991;321 (dip 991;321 top-left 932;311) | под точкой hwnd=0x1490126 | popup hwnd=0x1490126 | main hwnd=0x13B02F4
+08:55:46 OK   K7: физический клик отправлен (курсор на пункте, hover выдержан)
+08:55:47 K7: mouse did not commit at popup (documented) - keyboard Down + Enter
+08:55:49 OK   K7: пункт из dropdown закоммичен штатным путём (Text=5)
+08:55:49 OK   K7: список закрыт после выбора
+08:55:49 OK   K7: ThreadsCount=5 (master=5)
+08:55:49 OK   K7: бары перестроены под пункт (children=5)
+08:55:49 OK   K7: выбор из списка применён ровно один раз (delta=1)
+08:55:49 OK   K7: после focus-away файл=5 без откатов (file=5)
+08:55:49 OK   K7: гонка LostFocus/SelectionChanged не удвоила применение (delta=1)
+08:55:49 OK   K7: поле осталось 5 (Text=5)
+08:55:50 OK   K8 AC3: 256 баров (children=256)
+08:55:50 OK   K8 AC3: Height=256*1+10=266 (Height=266)
+08:55:50 OK   K8: отрисовка влезает в область (Actual=266)
+08:55:50 OK   K8: файл 256
+08:55:50 скриншот C:\Users\Admin\Desktop\NMG\Agents\Deployments\FixPipeline\Мастер фич\Artifacts\Stands\FEATURE-0139-UI\bin\Debug\net10.0-windows\ui-out\04_typed_256.png (1110x700)
+08:55:51 OK   K5 AC9: событийный путь выставил поле в 100 (Text=100)
+08:55:51 OK   K5 AC9: 100 баров (100)
+08:55:52 OK   K5 AC9: рекурсии события нет (8)
+08:55:53 OK   K9: фоновый сеттер сохранил 32 (file=32)
+08:55:53 OK   K9 AC9: поле отмаршаллился в 32 (Text=32)
+08:55:53 OK   K9 AC9: 32 бара (32)
+08:55:53 OK   K9 AC9: ровно одно событие, рекурсии нет (delta=1)
+08:55:53 OK   K9: UI-поток жив (нет взаимоблока на хоппе)
+08:55:53 завершение, провалов: 0
